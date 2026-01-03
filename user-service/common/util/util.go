@@ -5,9 +5,11 @@ import (
 	"reflect"
 	"strconv"
 
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	_ "github.com/spf13/viper"
+	_ "github.com/spf13/viper/remote"
 )
 
 func BindFromJSON(dest any, filename, path string) error {
@@ -16,6 +18,9 @@ func BindFromJSON(dest any, filename, path string) error {
 	v.SetConfigType("json")
 	v.AddConfigPath(path)
 	v.SetConfigName(filename)
+
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
 
 	err := v.ReadInConfig()
 	if err != nil {

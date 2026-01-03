@@ -5,7 +5,7 @@ import (
 	"user-service/common/util"
 
 	"github.com/sirupsen/logrus"
-	_ "github.com/spf13/viper"
+	_ "github.com/spf13/viper/remote"
 )
 
 var Config AppConfig
