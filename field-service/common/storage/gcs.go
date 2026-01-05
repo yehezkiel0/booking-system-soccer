@@ -1,15 +1,16 @@
-package gcs
+package storage
 
 import (
 	"bytes"
-	"cloud.google.com/go/storage"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/api/option"
 	"io"
 	"time"
+
+	"cloud.google.com/go/storage"
+	"github.com/sirupsen/logrus"
+	"google.golang.org/api/option"
 )
 
 type ServiceAccountKeyJSON struct {
@@ -31,11 +32,7 @@ type GCSClient struct {
 	BucketName            string
 }
 
-type IGCSClient interface {
-	UploadFile(context.Context, string, []byte) (string, error)
-}
-
-func NewGCSClient(serviceAccountKeyJSON ServiceAccountKeyJSON, bucketName string) IGCSClient {
+func NewGCSClient(serviceAccountKeyJSON ServiceAccountKeyJSON, bucketName string) Provider {
 	return &GCSClient{
 		ServiceAccountKeyJSON: serviceAccountKeyJSON,
 		BucketName:            bucketName,

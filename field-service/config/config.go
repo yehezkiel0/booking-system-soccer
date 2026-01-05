@@ -2,9 +2,11 @@ package config
 
 import (
 	"field-service/common/util"
+
+	"os"
+
 	"github.com/sirupsen/logrus"
 	_ "github.com/spf13/viper/remote"
-	"os"
 )
 
 var Config AppConfig
@@ -18,6 +20,9 @@ type AppConfig struct {
 	RateLimiterMaxRequest      float64         `json:"rateLimiterMaxRequest"`
 	RateLimiterTimeSecond      int             `json:"rateLimiterTimeSecond"`
 	InternalService            InternalService `json:"internalService"`
+	StorageType                string          `json:"storageType"`
+	LocalStoragePath           string          `json:"localStoragePath"`
+	LocalStorageBaseURL        string          `json:"localStorageBaseURL"`
 	GCSType                    string          `json:"gcsType"`
 	GCSProjectID               string          `json:"gcsProjectID"`
 	GCSPrivateKeyID            string          `json:"gcsPrivateKeyID"`

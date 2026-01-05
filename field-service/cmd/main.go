@@ -3,8 +3,8 @@ package cmd
 import (
 	"encoding/base64"
 	"field-service/clients"
-	"field-service/common/gcs"
 	"field-service/common/response"
+	"field-service/common/storage"
 	"field-service/config"
 	"field-service/constants"
 	"field-service/controllers"
@@ -14,13 +14,14 @@ import (
 	"field-service/routes"
 	"field-service/services"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
-	"net/http"
-	"time"
 )
 
 var command = &cobra.Command{
@@ -49,10 +50,10 @@ var command = &cobra.Command{
 			panic(err)
 		}
 
-		gcs := initGCS()
+		storageProvider := initStorage()
 		client := clients.NewClientRegistry()
 		repository := repositories.NewRepositoryRegistry(db)
-		service := services.NewServiceRegistry(repository, gcs)
+		service := services.NewServiceRegistry(repository, storageProvider)
 		controller := controllers.NewControllerRegistry(service)
 
 		router := gin.Default()
@@ -80,6 +81,13 @@ var command = &cobra.Command{
 			c.Next()
 		})
 
+		if config.Config.StorageType == "local" {
+			// Serve static files from the uploaded directory
+			// Assuming BaseURL matches the route, we strip the domain part if needed, but router.Static handles the path.
+			// Ideally getting the path from the URL, but for now hardcoded to match typical config
+			router.Static("/public", config.Config.LocalStoragePath)
+		}
+
 		lmt := tollbooth.NewLimiter(
 			config.Config.RateLimiterMaxRequest,
 			&limiter.ExpirableOptions{
@@ -103,14 +111,18 @@ func Run() {
 	}
 }
 
-func initGCS() gcs.IGCSClient {
+func initStorage() storage.Provider {
+	if config.Config.StorageType == "local" {
+		return storage.NewLocalClient(config.Config.LocalStorageBaseURL, config.Config.LocalStoragePath)
+	}
+
 	decode, err := base64.StdEncoding.DecodeString(config.Config.GCSPrivateKey)
 	if err != nil {
 		panic(err)
 	}
 
 	stringPrivateKey := string(decode)
-	gcsServiceAccount := gcs.ServiceAccountKeyJSON{
+	gcsServiceAccount := storage.ServiceAccountKeyJSON{
 		Type:                    config.Config.GCSType,
 		ProjectID:               config.Config.GCSProjectID,
 		PrivateKeyID:            config.Config.GCSPrivateKeyID,
@@ -123,7 +135,7 @@ func initGCS() gcs.IGCSClient {
 		ClientX509CertURL:       config.Config.GCSClientX509CertURL,
 		UniverseDomain:          config.Config.GCSUniverseDomain,
 	}
-	gcsClient := gcs.NewGCSClient(
+	gcsClient := storage.NewGCSClient(
 		gcsServiceAccount,
 		config.Config.GCSBucketName,
 	)
