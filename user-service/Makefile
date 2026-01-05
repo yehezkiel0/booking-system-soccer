@@ -9,7 +9,7 @@ watch-prepare: ## Install the tools required for the watch command
 	curl -sSfL https://raw.githubusercontent.com/cosmtrek/air/master/install.sh | sh
 
 watch: ## Run the service with hot reload
-	bin/air.exe
+	air
 
 ## Build:
 build: ## Build the service
