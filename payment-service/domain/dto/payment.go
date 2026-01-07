@@ -1,9 +1,10 @@
 package dto
 
 import (
-	"github.com/google/uuid"
 	"payment-service/constants"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type PaymentRequest struct {
@@ -75,7 +76,7 @@ type Webhook struct {
 	SettlementTime    string                        `json:"settlement_time"`
 	PaymentType       string                        `json:"payment_type"`
 	PaymentAmount     []PaymentAmount               `json:"payment_amount"`
-	OrderID           uuid.UUID                     `json:"order_id"`
+	OrderID           string                        `json:"order_id"`
 	MerchantID        string                        `json:"merchant_id"`
 	GrossAmount       string                        `json:"gross_amount"`
 	FraudStatus       string                        `json:"fraud_status"`

@@ -73,7 +73,7 @@ type Midtrans struct {
 }
 
 func Init() {
-	err := util.BindFromJSON(&Config, "config.json", ".")
+	err := util.BindFromJSON(&Config, "config", ".")
 	if err != nil {
 		logrus.Infof("failed to bind config: %v", err)
 		err = util.BindFromConsul(&Config, os.Getenv("CONSUL_HTTP_URL"), os.Getenv("CONSUL_HTTP_PATH"))

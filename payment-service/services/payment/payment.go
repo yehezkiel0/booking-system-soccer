@@ -287,7 +287,7 @@ func (p *PaymentService) Webhook(ctx context.Context, req *dto.Webhook) error {
 	)
 
 	err = p.repository.GetTx().Transaction(func(tx *gorm.DB) error {
-		_, txErr = p.repository.GetPayment().FindByOrderID(ctx, req.OrderID.String())
+		_, txErr = p.repository.GetPayment().FindByOrderID(ctx, req.OrderID)
 		if txErr != nil {
 			return txErr
 		}
@@ -300,7 +300,7 @@ func (p *PaymentService) Webhook(ctx context.Context, req *dto.Webhook) error {
 		status := req.TransactionStatus.GetStatusInt()
 		vaNumber := req.VANumbers[0].VaNumber
 		bank := req.VANumbers[0].Bank
-		_, txErr = p.repository.GetPayment().Update(ctx, tx, req.OrderID.String(), &dto.UpdatePaymentRequest{
+		_, txErr = p.repository.GetPayment().Update(ctx, tx, req.OrderID, &dto.UpdatePaymentRequest{
 			TransactionID: &req.TransactionID,
 			Status:        &status,
 			PaidAt:        paidAt,
@@ -312,7 +312,7 @@ func (p *PaymentService) Webhook(ctx context.Context, req *dto.Webhook) error {
 			return txErr
 		}
 
-		paymentAfterUpdate, txErr = p.repository.GetPayment().FindByOrderID(ctx, req.OrderID.String())
+		paymentAfterUpdate, txErr = p.repository.GetPayment().FindByOrderID(ctx, req.OrderID)
 		if txErr != nil {
 			return txErr
 		}
@@ -347,21 +347,23 @@ func (p *PaymentService) Webhook(ctx context.Context, req *dto.Webhook) error {
 					Total: total,
 				},
 			}
-			pdf, txErr = p.generatePDF(invoiceRequest)
-			if txErr != nil {
-				return txErr
-			}
-
-			invoiceLink, txErr = p.uploadToStorage(ctx, invoiceNumber, pdf)
-			if txErr != nil {
-				return txErr
-			}
-
-			_, txErr = p.repository.GetPayment().Update(ctx, tx, req.OrderID.String(), &dto.UpdatePaymentRequest{
-				InvoiceLink: &invoiceLink,
-			})
-			if txErr != nil {
-				return txErr
+			var pdfErr error
+			pdf, pdfErr = p.generatePDF(invoiceRequest)
+			if pdfErr != nil {
+				fmt.Printf("Failed to generate PDF (skipping invoice): %v\n", pdfErr)
+			} else {
+				var uploadErr error
+				invoiceLink, uploadErr = p.uploadToStorage(ctx, invoiceNumber, pdf)
+				if uploadErr != nil {
+					fmt.Printf("Failed to upload PDF (skipping invoice): %v\n", uploadErr)
+				} else {
+					_, txErr = p.repository.GetPayment().Update(ctx, tx, req.OrderID, &dto.UpdatePaymentRequest{
+						InvoiceLink: &invoiceLink,
+					})
+					if txErr != nil {
+						return txErr
+					}
+				}
 			}
 		}
 		return nil
