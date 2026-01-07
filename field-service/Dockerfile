@@ -12,7 +12,7 @@ COPY . .
 RUN go install github.com/buu700/gin@latest
 RUN go mod tidy
 
-RUN go build -o user-service
+RUN make build
 
 FROM alpine:latest
 
